@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ThaID Authentication Example</title>
+        <link rel="stylesheet" href="{{ url_for('static',filename='styles/bootstrap.min.css') }}" />
+        <link rel="stylesheet" href="{{ url_for('static',filename='styles/site.css') }}" />
+    </head>
+
+    <header>
+        <div id="liveAlertPlaceholder"></div>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">ThaID Authentication Example</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="/">Home</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            <div class="text-center">
+                <h1 class="display-4">Welcome to ThaID Integratio Example for Python Flask</h1>
+                <br></br>
+                <img alt="ThaID Logo" src="{{ url_for('static',filename='images/ThaID.png') }}" />
+                <br></br>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Token</h5>
+                        <p class="card-text">Token ใช้เพื่อยืนยันตัวตน</p>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Access Token: {{ thaidtoken['access_token'] }}</li>
+                        <li class="list-group-item">Refresk Token: {{ thaidtoken['refresh_token'] }}</li>
+                        <li class="list-group-item">Token Type: {{ thaidtoken['token_type'] }}</li>
+                        <li class="list-group-item">Expires In: {{ datetime.fromtimestamp(thaidtoken['expires_in']) }}</li>
+                        <li class="list-group-item">Scope: {{ thaidtoken['scope'] }}</li>
+                        <li class="list-group-item">ID Token: {{ thaidtoken['id_token'] }}</li>
+                    </ul>
+                    <div class="card-body">
+                        <a href="#" class="card-link" id="requestid">ทดสอบขอข้อมูลจาก AS</a>
+                    </div>
+                </div>
+
+                <br></br>
+                <hr />
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">ID Token</h5>
+                        <p class="card-text">ID Token ใช้เพื่อยืนยันตัวตน</p>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Access Token Hash: {{ thaidtoken['userinfo']['at_hash'] }}</li>
+                        <li class="list-group-item">Audience: {{ thaidtoken['userinfo']['aud'] }}</li>
+                        <li class="list-group-item">Version: {{ thaidtoken['userinfo']['version'] }}</li>
+                        <li class="list-group-item">Authentication Time: {{ datetime.fromtimestamp(thaidtoken['userinfo']['auth_time']) }}</li>
+                        <li class="list-group-item">Issuer: {{ thaidtoken['userinfo']['iss'] }}</li>
+                        <li class="list-group-item">Issue In: {{ datetime.fromtimestamp(thaidtoken['userinfo']['iat']) }} </li>
+                        <li class="list-group-item">Expires In: {{ datetime.fromtimestamp(thaidtoken['userinfo']['exp']) }}</li>
+                        <li class="list-group-item">Subject Identifier: {{ thaidtoken['userinfo']['sub'] }}</li>
+                        <li class="list-group-item">PID: {{ thaidtoken['userinfo']['pid'] }}</li>
+                        <li class="list-group-item">Name English: {{ thaidtoken['userinfo']['name_en'] }}</li>
+                        <li class="list-group-item">Name Thai: {{ thaidtoken['userinfo']['name'] }}</li>
+                    </ul>
+                </div>
+
+                <br></br>
+                <a class="btn btn-outline-dark" href="/logout" role="button">ออกจากระบบ ThaID</a>
+            </div>
+            
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2024 - FRONTIS Company
+        </div>
+    </footer>
+    <script src="{{ url_for('static',filename='scripts/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='scripts/bootstrap.js') }}"></script>
+    <script src="{{ url_for('static',filename='scripts/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        var alertPlaceholder = document.getElementById('liveAlertPlaceholder')
+        function alert(message, type) {
+            var wrapper = document.createElement('div')
+            wrapper.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible" role="alert">' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>'
+            alertPlaceholder.append(wrapper)
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var requestButton = document.getElementById('requestid');
+
+            requestButton.addEventListener('click', function () {
+                const url = '{{url_for("inspect")}}';
+                const bearerToken = '{{ thaidtoken['access_token'] }}';
+                const headers = new Headers({
+                    'Authorization': `Bearer ${bearerToken}`
+                });
+                fetch(url, {
+                    method: 'GET',
+                    headers: headers
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        alert(JSON.stringify(data), 'success')
+
+                        console.log(data);
+                    })
+                    .catch(error => {
+                        alert('There has been a problem with your fetch operation:', 'danger')
+                        console.error('There has been a problem with your fetch operation:', error);
+                    });
+            });
+        });
+    </script>
+</html>
